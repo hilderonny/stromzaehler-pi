@@ -120,11 +120,74 @@ ausgeführt werden.
 sudo python server.py
 ```
 
-https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
-
 ## 4. Live-Kamerabild
+
+Als nächstes wird probiert, ob man das Kamerabild sieht. Dazu soll es zyklisch
+aufgenommen und auf Abruf über die Weboberfläche angezeigt werden. Zuerst aber
+der Teil, der das Bild zyklisch abruft. Dazu bietet sich die Kamera Bibliothek
+vom Raspberry PI an. Ab Bookworm wird dazu `picamera2` verwendet, welches man
+so hier installiert.
+
+```sh
+sudo apt install -y python3-picamera2 --no-install-recommends
+```
+
+Eine Anleitung für die Bibliothek findet man 
+[hier](https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf).
+
+**Kameraerweiterung**
+
+```py
+import picamera2
+import io
+import time
+import threading
+
+# Store latest image
+latest_image = None
+
+# Initialize camera
+camera = picamera2.Picamera2()
+
+# Clean shutdown of capture threads
+shutdown_event = threading.Event()
+
+# Function for continuous capturing
+def capture_images():
+    global latest_image
+    stream = io.BytesIO()
+    while not shutdown_event.is_set():
+        stream.seek(0)
+        camera.capture_file(stream, format='jpeg')
+        latest_image = stream.getvalue()
+        stream.seek(0)
+        stream.truncate()
+        time.sleep(0.1)  # Capture every 0.1 seconds
+
+# Capture thread
+capture_thread = threading.Thread(target=capture_images, daemon=True)
+capture_thread.start()
+
+...
+
+# Run Server until interrupt
+try:
+    server.serve_forever()
+finally:
+    # Clean up ressources
+    camera.close()
+    shutdown_event.set()
+    capture_thread.join()
+    server.server_close()
+```
+
+Nun wird zumindest jede Zehntelsekunde ein Bild gemacht und in der Variablen
+`latest_image` gespeichert.
+
 ## 5. Beleuchtung
 ## 6. OCR
 ## 7. Datenbank
 ## 8. Befestigung
 ## 9. Weboberfläche
+
+https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
