@@ -148,6 +148,8 @@ latest_image = None
 
 # Initialize camera
 camera = picamera2.Picamera2()
+camera.start()
+time.sleep(2)
 
 # Clean shutdown of capture threads
 shutdown_event = threading.Event()
@@ -182,12 +184,81 @@ finally:
 ```
 
 Nun wird zumindest jede Zehntelsekunde ein Bild gemacht und in der Variablen
-`latest_image` gespeichert.
+`latest_image` gespeichert. Als nächste soll dieses Bild per HTTP-Aufruf
+zurückgegeben werden. Dazu wird eine API unter der URL
+`/api/image` definiert, was eine Anpassung des Webservers erfordert.
+
+```py
+# Webserver
+import http.server
+import os
+import urllib.parse
+
+# Change to subdirectory "public" to serve static files
+os.chdir('public')
+
+# Custom class for API handling
+class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        global latest_image
+        parsed_path = urllib.parse.urlparse(self.path)
+        # Handle API request for the image
+        if parsed_path.path == '/api/image':
+            if latest_image:
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(latest_image)))
+                self.end_headers()
+                self.wfile.write(latest_image)
+            else:
+                self.send_response(503)
+                self.end_headers()
+        else:
+            # Use the default functionality of SimpleHTTPRequestHandler for static files
+            super().do_GET()
+    # Prevent logging
+    def log_message(self, format, *args):
+        pass
+
+# Create Server on Port 80
+server = http.server.HTTPServer(('', 80), ApiHTTPRequestHandler)
+```
+
+Ruft man nun im Browser die URL `/api/image`auf, sollte das aktuelle Bild
+angezeigt werden. Damit das Bild als nahezu Echtzeit-Video angezeigt wird,
+wird die HTML-Seite angepasst.
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="css/style.css">
+        <script type="module" src="scripts/main.js"></script>
+    </head>
+    <body>
+        <img>
+    </body>
+</html>
+```
+
+Ein Javascript sorgt dafür, dass das Bild alle 100 Millisekunden neu geladen
+wird.
+
+```js
+setInterval(() => {
+    document.querySelector("img").setAttribute("src", "api/image?" + Date.now())
+}, 100)
+``` 
+
+Das Bild flackert nun zwar ab und zu - wenn genau zu dem Zeitpunkt, 
+zu dem das Bild abgefragt wird, dieses neu geschrieben - aber das soll hier
+erst mal nicht stören.
 
 ## 5. Beleuchtung
 ## 6. OCR
 ## 7. Datenbank
 ## 8. Befestigung
 ## 9. Weboberfläche
+## 10. Hintergrunddienst
 
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac

@@ -9,6 +9,8 @@ latest_image = None
 
 # Initialize camera
 camera = picamera2.Picamera2()
+camera.start()
+time.sleep(2)
 
 # Clean shutdown of capture threads
 shutdown_event = threading.Event()
@@ -32,12 +34,36 @@ capture_thread.start()
 # Webserver
 import http.server
 import os
+import urllib.parse
 
 # Change to subdirectory "public" to serve static files
 os.chdir('public')
 
+# Custom class for API handling
+class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        global latest_image
+        parsed_path = urllib.parse.urlparse(self.path)
+        # Handle API request for the image
+        if parsed_path.path == '/api/image':
+            if latest_image:
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(latest_image)))
+                self.end_headers()
+                self.wfile.write(latest_image)
+            else:
+                self.send_response(503)
+                self.end_headers()
+        else:
+            # Use the default functionality of SimpleHTTPRequestHandler for static files
+            super().do_GET()
+    # Prevent logging
+    def log_message(self, format, *args):
+        pass
+
 # Create Server on Port 80
-server = http.server.HTTPServer(('', 80), http.server.SimpleHTTPRequestHandler)
+server = http.server.HTTPServer(('', 80), ApiHTTPRequestHandler)
 
 # Run Server until interrupt
 try:
