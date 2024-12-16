@@ -64,6 +64,62 @@ Kommandozeile testen.
 
 ## 3. Webserver
 
+Bei der Frage, welche Programmiersprache ich verwenden sollte, entschied ich 
+mich für Python. Hiermit kann man Webserver und Datenbanken betreiben und die
+notwendigen OCR Funktionalitäten gibt es hier auch als Bibliotheken.
+
+Die gesamte Funktionalität wird in einem Script `server.py` implementiert.
+Zuerst soll der Server HTML Dateiuen aus einem Unterverzeichnis `public`
+bereitstellen.
+
+```py
+import http
+import os
+
+# Change to subdirectory "public" to serve static files
+os.chdir('public')
+
+# Create Server on Port 80
+server = http.server.HTTPServer(('', 80), http.server.SimpleHTTPRequestHandler)
+
+# Run Server until interrupt
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    server.server_close()
+```
+
+Um zu testen, ob das Ausliefern von HTML- und anderen Dateien auch aus
+Unterverzeichnissen funktioniert, habe ich eine `index.html` und eine
+`css/style.css` Datei erstellt.
+
+**index.html**
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        Hallo Welt!
+    </body>
+</html>
+```
+
+**css/style.css**
+
+```css
+body { color: green; }
+```
+
+Da der Server auf Port 80 lauschen soll, muss das Skript mit root-Rechten
+ausgeführt werden.
+
+```sh
+sudo python server.py
+```
+
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
 
 ## 4. Live-Kamerabild
