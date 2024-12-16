@@ -49,6 +49,19 @@ funktionierte dabei die Standardkonfiguration nicht, sodass sich dieser nicht
 in das WLAN einbuchte. Vermutlich fehlten da noch Treiber. Daher verband ich den
 Raspberry direkt per LAN über einen PowerLine-Adapter mit der Fritzbox.
 
+Als nächstes klonte ich dieses Repository lokal nach
+`home/pi/github/hilderonny/stromzaehler-pi`. Dabei nutzte ich das [GitHub
+Command Line 
+Interface](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).
+
+```sh
+gh repo clone hilderonny/stromzaehler-pi /home/pi/github/hilderonny/stromzaehler-pi
+```
+
+Anschließend konnte ich mich mit Visual Studio Code per SSH auf den PI
+verbinden und von dort aus weiter entwickeln und gleich mit der eingebauten
+Kommandozeile testen.
+
 ## 3. Webserver
 
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
