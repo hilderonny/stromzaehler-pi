@@ -288,6 +288,11 @@ Das Ergebnis war ... miserabel. Die LED reicht zum einen von der Leuchtkraft
 nicht aus, um genug Licht zu produzieren, und zum zum anderen blendet das
 von der Glasscheibe am Stromzähler reflektierte Licht.
 
+Das Bild selbst ist zwar unscharf, aber wenigstens ist der gesamte Zählerstand
+auf dem Bild. Die Schärfe kann ich an der Kamera direkt anpassen, indem ich an
+der Linsenverschraubung drehe, siehe dazu
+https://projects.raspberrypi.org/de-DE/projects/infrared-bird-box/6
+
 ## 7. OCR
 ## 8. Datenbank
 ## 9. Weboberfläche
