@@ -3,9 +3,12 @@ import picamera2
 import io
 import time
 import threading
+import RPi.GPIO
 
 # Store latest image
 latest_image = None
+# Define GPIO port of the camera LED
+camera_led_port = 32
 
 # Initialize camera
 camera = picamera2.Picamera2()
@@ -61,6 +64,12 @@ class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     # Prevent logging
     def log_message(self, format, *args):
         pass
+
+# Set LED GPIO to output
+RPi.GPIO.setmode(RPi.GPIO.BCM)
+RPi.GPIO.setup(camera_led_port, RPi.GPIO.OUT, initial=False)
+# Turn on LED, later this is done only when a picture is taken
+RPi.GPIO.output(camera_led_port, True)
 
 # Create Server on Port 80
 server = http.server.HTTPServer(('', 80), ApiHTTPRequestHandler)

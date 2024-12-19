@@ -252,9 +252,28 @@ setInterval(() => {
 
 Das Bild flackert nun zwar ab und zu - wenn genau zu dem Zeitpunkt, 
 zu dem das Bild abgefragt wird, dieses neu geschrieben - aber das soll hier
-erst mal nicht stören.
+erst mal nicht stören, zumal später phnehin nur einmal pro Minute ein Bild
+gemacht wird.
 
 ## 5. Beleuchtung
+
+Zum Glück verwende ich einen Raspberry PI 2 Modell B+ und eine PiKamera V1.3.
+Bei dieser Kombination ist auf der Kamera noch eine rote LED verbaut, die
+sich per GPIO ansteuern lässt.
+
+Das passiert in Python, indem der GPIO-Port 32 angeschaltet wird.
+
+```py
+import RPi.GPIO
+# Define GPIO port of the camera LED
+camera_led_port = 32
+# Set LED GPIO to output
+RPi.GPIO.setmode(RPi.GPIO.BCM)
+RPi.GPIO.setup(camera_led_port, RPi.GPIO.OUT, initial=False)
+# Turn on LED, later this is done only when a picture is taken
+RPi.GPIO.output(camera_led_port, True)
+```
+
 ## 6. OCR
 ## 7. Datenbank
 ## 8. Befestigung
