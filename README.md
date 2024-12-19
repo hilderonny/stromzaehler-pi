@@ -274,9 +274,22 @@ RPi.GPIO.setup(camera_led_port, RPi.GPIO.OUT, initial=False)
 RPi.GPIO.output(camera_led_port, True)
 ```
 
-## 6. OCR
-## 7. Datenbank
-## 8. Befestigung
+## 6. Befestigung
+
+In diesem Schritt will ich prüfen, wie der Raspberry und die Kamera vor dem
+Stromzähler positioniert werden muss, ob die Beleuchtung ausreicht und ob der
+Kamerafokus und der Öffnungswinkel ausreichen.
+
+Dazu habe ich einen [Rahmen](3dmodels/rahmenentwurf.scad) entworfen, der den
+größtmöglichen Abstand der Kamera ermöglicht, nicht viel Filament braucht und
+an den Stromzähler geklemmt wird.
+
+Das Ergebnis war ... miserabel. Die LED reicht zum einen von der Leuchtkraft
+nicht aus, um genug Licht zu produzieren, und zum zum anderen blendet das
+von der Glasscheibe am Stromzähler reflektierte Licht.
+
+## 7. OCR
+## 8. Datenbank
 ## 9. Weboberfläche
 ## 10. Hintergrunddienst
 
