@@ -295,6 +295,16 @@ https://projects.raspberrypi.org/de-DE/projects/infrared-bird-box/6
 
 ## 7. OCR
 
+Referenzbildgröße: 46x84 Pixel
+Offset je Ziffer:
+1: 19,166
+2: 109,166
+3: 200,168
+4: 292,169
+5: 388,169
+6: 479,170
+7: 576,171
+
 ```sh
 sudo apt install tesseract-ocr
 tesseract --psm 13 image.jpg stdout
