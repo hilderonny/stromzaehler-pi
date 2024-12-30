@@ -1,3 +1,3 @@
 setInterval(() => {
     document.querySelector("img").setAttribute("src", "api/image?" + Date.now())
-}, 100)
+}, 1000)

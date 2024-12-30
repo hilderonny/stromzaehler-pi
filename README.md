@@ -294,6 +294,14 @@ der Linsenverschraubung drehe, siehe dazu
 https://projects.raspberrypi.org/de-DE/projects/infrared-bird-box/6
 
 ## 7. OCR
+
+```sh
+sudo apt install tesseract-ocr
+tesseract --psm 13 image.jpg stdout
+sudo pip install pytesseract --break-system-packages
+sudo pip3 install opencv-python-headless --break-system-packages
+```
+
 ## 8. Datenbank
 ## 9. Weboberfläche
 ## 10. Hintergrunddienst
