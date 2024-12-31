@@ -16,9 +16,9 @@ def load_reference_images():
     reference_images = [load_reference_image(f"{number}_bw.png") for number in range(10)]
     return reference_images
 
-def extract_digit_array(image_array, x, y):
+def extract_digit_array(image_array, offset_x, offset_y):
     numpy_array = numpy.array(image_array)
-    digit_array = numpy_array[y:y+84, x:x+46, 0]
+    digit_array = numpy_array[offset_y:offset_y+84, offset_x:offset_x+46, 0]
     min_value = numpy.min(digit_array)
     max_value = numpy.max(digit_array)
     average_value = (float(min_value) + float(max_value)) / 2

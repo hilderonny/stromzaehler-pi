@@ -284,9 +284,9 @@ Dazu habe ich einen [Rahmen](3dmodels/rahmenentwurf.scad) entworfen, der den
 größtmöglichen Abstand der Kamera ermöglicht, nicht viel Filament braucht und
 an den Stromzähler geklemmt wird.
 
-Das Ergebnis war ... miserabel. Die LED reicht zum einen von der Leuchtkraft
-nicht aus, um genug Licht zu produzieren, und zum zum anderen blendet das
-von der Glasscheibe am Stromzähler reflektierte Licht.
+Das Ergebnis war brauchbar. Die eingebaute LED reicht von der Leuchtkraft
+aus, um genug Licht zu produzieren. Die Scheibe reflektiert zwar, aber die
+Kamera ist so angebracht, dass die LED-Reflektion über den Ziffern ist.
 
 Das Bild selbst ist zwar unscharf, aber wenigstens ist der gesamte Zählerstand
 auf dem Bild. Die Schärfe kann ich an der Kamera direkt anpassen, indem ich an
@@ -295,21 +295,122 @@ https://projects.raspberrypi.org/de-DE/projects/infrared-bird-box/6
 
 ## 7. OCR
 
-Referenzbildgröße: 46x84 Pixel
-Offset je Ziffer:
-1: 19, 166
-2: 109, 166
-3: 200, 168
-4: 292, 169
-5: 388, 169
-6: 479, 170
-7: 576, 171
+Ich wollte auf zusätzliche Bibliotheken wie OpenCV oder KI-Systeme wie Tesseract
+verzichten und die Ziffernerkennung so einfach, wie möglich machen. Also
+entschied ich mich für einfache Referenzvergleiche. Dazu Machte ich mit der
+Kamera Bilder vom Stromzähler, sodass ich von jeder Ziffer mindestens ein Bild
+bekam. Dann schnitt ich die Ziffern in gleich großen Abschnitten zu 46x84 Pixeln
+aus und wandelte sie mit Paint.NET in ein 1-Bit-PNG-Bild um.
 
-```sh
-sudo apt install tesseract-ocr
-tesseract --psm 13 image.jpg stdout
-sudo pip install pytesseract --break-system-packages
-sudo pip3 install opencv-python-headless --break-system-packages
+![0](images/0_bw.png) ![1](images/1_bw.png) ![2](images/2_bw.png)
+![3](images/3_bw.png) ![4](images/4_bw.png) ![5](images/5_bw.png)
+![6](images/6_bw.png) ![7](images/7_bw.png) ![8](images/8_bw.png)
+![9](images/9_bw.png)
+
+Anschließend maß ich den Offset jeder Ziffernstelle im Bild aus. Der Algorithmus
+schneidet nun vom Bild ein Rechteck an der Offsetstelle der jeweiligen Ziffer
+in der Größe der Referenzbilder (46x84 Pixel) aus und macht daraus ein
+Schwarz-Weiß-Bild. Dazu verwendet der vom Bild nur den roten Kanal, da nur
+dieser durch die rote LED ausreichend Daten enthält. Anschließend wird von der
+Helligheit der kleinste und größte Wert ermittelt und der Mittelwert gebildet.
+Mit diesem Mittelwert wird das Bild dann in 1 Bit - so wie die Referenzbilder -
+umgewandelt. Der einfacheren Vergleichbarkeit halber wird das
+zweidimensionale Bild-Array in ein eindimensionales Feld flachgeklopft.
+
+```py
+import numpy
+
+# Flaches 1-Bit-Array für bestimmte Ziffer an Offset extrahieren
+def extract_digit_array(image_array, offset_x, offset_y):
+    # Numpy für effiziente Matritzen- und Vektorenrechnungen verwenden
+    numpy_array = numpy.array(image_array)
+    # Bildausschnitt für Ziffer ermitteln, nur ersten (roten) Kanal verwenden
+    digit_array = numpy_array[offset_y:offset_y+84, offset_x:offset_x+46, 0]
+    # Mindestwert und Maximalwert für Mittelwertbestimmung errechnen
+    min_value = numpy.min(digit_array)
+    max_value = numpy.max(digit_array)
+    average_value = (float(min_value) + float(max_value)) / 2
+    # 1-Bit-Feld durch einfachen Mittelwertvergleich erstellen
+    onebit_array = numpy.where(digit_array < average_value, 0, 1).flatten()
+    return onebit_array
+```
+
+Um die Referenzbilder vergleichbar zu haben, werden diese ebenfalls in ein
+1-Bit-Feld eingelesen.
+
+```py
+import PIL
+
+# Einzelnes Referenzbild laden und als 1-Bit-Feld zurückgeben
+def load_reference_image(file_name):
+    # Bild laden
+    pil_image = PIL.Image.open("images/" + file_name)
+    # Falls es nich schon ein 1-Bit-Bild ist, umwandeln
+    if pil_image.mode != '1':
+        pil_image = pil_image.convert('1')
+    # In 0 und 1 umwandeln und aus 2 Dimensionen eine machen
+    numpy_array = numpy.array(pil_image).astype(numpy.uint8).flatten()
+    return numpy_array
+
+# Alle Referenzbilder von 0 bis 9 laden und in einem sortierten Feld liefern
+def load_reference_images():
+    reference_images = [load_reference_image(f"{number}_bw.png") for number in range(10)]
+    return reference_images
+```
+
+Für den eigentlichen Vergleich werden alle Stellen über deren Offset extrahiert
+und mit allen Referenzbildern verglichen. Der Vergleich zählt dabei einfach die
+unterschiedlichen Pixel zwischen Ziffernbild und Referenzbild. Das Referenzbild,
+welches die wenigsten Abweichungen aufweist, stellt vermutlich die passende
+Ziffer dar.
+
+Da die Ziffern rotieren, kann es vorkommen, dass eine Ziffer mal nicht eindeutig
+erkannt werden kann. Für so einen Fall wird ein Unterschiedsschwellwert von
+1000 (aus dem Bauch heraus) festgelegt. Hat jedes Referenzbild mehr als 1000
+Abweichungen, so gilt die Ziffer als "nicht zuverlässig erkannt" und wird mit
+`?` markiert.
+
+```py
+# Ziffern-Feld mit Referenzbildern vergleichen und Wert ermitteln
+def detect_digit_value(digit_array):
+    # Unterschiede zählen
+    differences = [numpy.sum(digit_array != reference_digit_array) for reference_digit_array in reference_arrays]
+    # Der Index des geringsten Unterschiedes ist gleichzeitig die Ziffer
+    index = numpy.argmin(differences)
+    # Genaue Anuzahl Unterschiede ermitteln, um Fehlinterpretationen zu erkennen
+    value = differences[index]
+    # Nur wenn die Unterschiede unter 1000 liegen ist Ziffer zuverlässig 
+    detected_value = str(index) if value < 1000 else "?"
+    return detected_value
+
+# Offsets der Ziffern festlegen
+digit_positions = [
+    [19, 166],
+    [109, 166],
+    [200, 168],
+    [292, 169],
+    [388, 169],
+    [479, 170],
+    [576, 171]
+]
+
+# Bild aufnehmen
+image_array = camera.capture_array()
+
+# Erkannten Wert deklarieren
+value = ""
+
+# Jede Ziffernposition betrachten
+for digit_position in digit_positions:
+    # 1-Bit-Feld für Ziffer extrahieren
+    digit_array = extract_digit_array(image_array, digit_position[0], digit_position[1])
+    # Ziffer oder "?" erkennen
+    digit_value = detect_digit_value(digit_array)
+    Ziffern zusammenfügen
+    value += digit_value
+
+# Erkannten Zählerstand ausgeben
+print(value)
 ```
 
 ## 8. Datenbank
