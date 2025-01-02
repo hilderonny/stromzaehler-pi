@@ -482,10 +482,53 @@ shutdown_event.set()
 capture_thread.join()
 ```
 
-## X. API für Datenbankabfragen
+## 10. API für Datenbankabfragen
 
-**TODO**: API für SELECT erstellen und beschreiben, 
-siehe https://stackoverflow.com/a/25564849 für JSON
+Um die Datenbank abzufragen, sende ich mit JavaScript von der Website per POST
+eine SQL-Abfrage und erhalte dafür eine JSON-Struktur.
+
+```js
+var response = await fetch("api/database", {
+    body: "SELECT * FROM measurements;",
+    method: "POST",
+    header: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+})
+var json = await response.json(response)
+console.log(json)
+```
+
+Auf Serverseite wird diese Abfrage im HTTP-Handler verarbeitet, welcher eine
+separate Datenbankverbindung aufbaut. Das muss sein, weil unterschiedliche
+Threads nicht dieselbe Verbindung benutzen können.
+
+```py
+import json
+
+# Datenbank öffnen, Request abschicken und Ergebnis als JSON zurück geben
+def request_database_for_json(request):
+    db_connection = sqlite3.connect("../database.db")
+    cursor = db_connection.execute(request)
+    data = cursor.fetchall()
+    db_connection.close()
+    return json.dumps(data)
+
+class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    # Abfrage muss per POST gesendet werden
+    def do_POST(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        if parsed_path.path == '/api/database':
+            length = self.headers["Content-length"]
+            length = int(length)
+            request = self.rfile.read(length)
+            json = request_database_for_json(request.decode('UTF-8'))
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(bytes(json, "utf-8"))        
+```
 
 ## X. Hintergrunddienst
 ## X. Weboberfläche

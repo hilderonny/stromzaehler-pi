@@ -10,6 +10,7 @@ import PIL
 import numpy
 import threading
 import sqlite3
+import json
 
 # Load single reference image and return it as 1 bit array
 def load_reference_image(file_name):
@@ -107,6 +108,14 @@ def capture_forever():
             time.sleep(14)
     db_connection.close()
 
+# Open database connection, do SQL request and convert result into JSON
+def request_database_for_json(request):
+    db_connection = sqlite3.connect("../database.db")
+    cursor = db_connection.execute(request)
+    data = cursor.fetchall()
+    db_connection.close()
+    return json.dumps(data)
+
 # Define GPIO port of the camera LED
 camera_led_port = 32
 
@@ -165,6 +174,20 @@ class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     # Prevent logging
     # def log_message(self, format, *args):
     #     pass
+    def do_POST(self):
+        parsed_path = urllib.parse.urlparse(self.path)
+        # Handle API request for database requests
+        if parsed_path.path == '/api/database':
+            length = self.headers["Content-length"]
+            length = int(length)
+            request = self.rfile.read(length)
+            json = request_database_for_json(request.decode('UTF-8'))
+            #print(request, json)
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(bytes(json, "utf-8"))        
 
 # Set LED GPIO to output
 RPi.GPIO.setmode(RPi.GPIO.BCM)
