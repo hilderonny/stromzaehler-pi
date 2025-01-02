@@ -82,17 +82,23 @@ def capture_forever():
     db_connection.execute(
         "CREATE TABLE IF NOT EXISTS measurements(timestamp, value);"
     )
+    previous_value = 0
     while not shutdown_event.is_set():
         # Detect value
         detected_value = take_image_and_detect_value()
         # Store value in database if valid
         if "?" not in detected_value:
-            db_connection.execute(
-                "INSERT INTO measurements VALUES(datetime('now'),?);",
-                (int(detected_value),),
-            )
-            db_connection.commit()
-            print("Stored " + detected_value)
+            integer_value = int(detected_value)
+            if integer_value > previous_value:
+                db_connection.execute(
+                    "INSERT INTO measurements VALUES(datetime('now'),?);",
+                    (int(detected_value),),
+                )
+                db_connection.commit()
+                print("Stored " + str(integer_value))
+                previous_value = integer_value
+            else:
+                print("Ignored " + str(integer_value))
             # Sleep a minute before next turn
             time.sleep(59)
         else:
@@ -112,7 +118,7 @@ camera.start()
 os.chdir('public')
 
 # Define detection threshold for digits
-detection_threshold = 1300
+detection_threshold = 1000
 
 # Define digit positions
 digit_positions = [
@@ -120,7 +126,7 @@ digit_positions = [
     [109, 166],
     [200, 168],
     [292, 169],
-    [388, 169],
+    [384, 169],
     [479, 170],
     [576, 171]
 ]
