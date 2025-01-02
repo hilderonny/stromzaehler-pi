@@ -452,10 +452,42 @@ for row in db_connection.execute("""
     print(row)
 ```
 
+## 9. Zyklische Wertermittlung
+
+Der Server soll zyklisch einmal je Minute ein Bild aufnehmen, analysieren und
+den Wert (sofern dieser korrekt erkannt wurde) in die Datenbank schreiben. Dazu
+wird ein Thread erstellt, der neben dem HTTP Server parallel läuft.
+
+```py
+import time
+import threading
+
+# Abbruchbedingung für Thread festlegen
+shutdown_event = threading.Event()
+
+# Thread-Funktion
+def thread_function():
+    while not shutdown_event.is_set():
+        # Mache irgendwas
+        # ...
+        # Eine Minute warten, bevor nächster Durchlauf kommt
+        time.sleep(60)
+
+# Thread erzeugen und starten
+capture_thread = threading.Thread(target=thread_function, daemon=True)
+capture_thread.start()
+
+# Irgendwann aufräumen und Thread beenden
+shutdown_event.set()
+capture_thread.join()
+```
+
+## X. API für Datenbankabfragen
+
 **TODO**: API für SELECT erstellen und beschreiben, 
 siehe https://stackoverflow.com/a/25564849 für JSON
 
-## 9. Hintergrunddienst
-## 10. Weboberfläche
+## X. Hintergrunddienst
+## X. Weboberfläche
 
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
