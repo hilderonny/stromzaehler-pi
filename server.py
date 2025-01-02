@@ -90,7 +90,7 @@ def capture_forever():
         # Store value in database if valid
         if "?" not in detected_value:
             integer_value = int(detected_value)
-            if integer_value > previous_value:
+            if integer_value != previous_value:
                 db_connection.execute(
                     "INSERT INTO measurements VALUES(datetime('now'),?);",
                     (int(detected_value),),
