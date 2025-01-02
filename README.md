@@ -414,7 +414,48 @@ print(value)
 ```
 
 ## 8. Datenbank
-## 9. Weboberfläche
-## 10. Hintergrunddienst
+
+Als Datenbank verwende ich der Einfachheit halber SQLite. In einer Tabelle
+`measurements` wird der Zeitstempel der Messung und der ausgelesene Wert
+gespeichert. Beim Wert ignoriere ich das Komma, sodass aus `99423,6` ein
+`994236` wird. Die Umrechnung mache ich an der Oberfläche. Beim Starten werden
+die Datenbankdatei und die Tabelle angelegt, wenn sie nicht schon existieren.
+
+```py
+import sqlite3
+db_connection = sqlite3.connect("database.db", autocommit=True)
+db_connection.execute(
+    "CREATE TABLE IF NOT EXISTS measurements(timestamp, value);"
+)
+```
+
+Messwerte werden nur dann eingetragen, wenn sie korrekt gelesen wurden.
+
+```py
+if "?" not in value:
+    db_connection.execute(
+        "INSERT INTO measurements(timestamp, value) VALUES(datetime('now'),?);",
+        (value,),
+    )
+```
+
+Anschließend kann man die Werte mit Standard-SQL-Abfragen wieder auslesen, zum
+Beispiel für einen bestimmten Monat.
+
+```py
+# Date functions: https://www.sqlite.org/lang_datefunc.html
+for row in db_connection.execute("""
+    SELECT timestamp, value 
+    FROM measurements 
+    WHERE strftime('%Y-%m', timestamp) = '2024-12';
+"""):
+    print(row)
+```
+
+**TODO**: API für SELECT erstellen und beschreiben, 
+siehe https://stackoverflow.com/a/25564849 für JSON
+
+## 9. Hintergrunddienst
+## 10. Weboberfläche
 
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac

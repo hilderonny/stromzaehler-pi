@@ -1,2 +1,4 @@
 *.gcode
 image_array.png
+test.db
+database.db
