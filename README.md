@@ -530,7 +530,35 @@ class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(bytes(json, "utf-8"))        
 ```
 
-## X. Hintergrunddienst
-## X. Weboberfläche
+## 11. Hintergrunddienst
+
+Der Server soll gleich beim Systemstart anlaufen. Dazu habe ich unter
+`/etc/systemd/system/stromzaehler.service` folgende Konfiguration erstellt.
+
+```
+[Unit]
+Description=Stromzaehler
+
+[Service]
+ExecStart=/usr/bin/python /home/pi/github/hilderonny/stromzaehler-pi/server.py
+Restart=always
+User=root
+WorkingDirectory=/home/pi/github/hilderonny/stromzaehler-pi/
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Die Einrichtung des Dienstes geht dann so:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable stromzaehler.service
+sudo systemctl start stromzaehler.service
+```
+
+## 12. Weboberfläche
+
+TODO...
 
 https://chatgpt.com/c/675f31f5-894c-8005-ab33-c503bfbb53ac
