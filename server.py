@@ -174,20 +174,20 @@ class ApiHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     # Prevent logging
     # def log_message(self, format, *args):
     #     pass
-    def do_POST(self):
-        parsed_path = urllib.parse.urlparse(self.path)
-        # Handle API request for database requests
-        if parsed_path.path == '/api/database':
-            length = self.headers["Content-length"]
-            length = int(length)
-            request = self.rfile.read(length)
-            json = request_database_for_json(request.decode('UTF-8'))
-            #print(request, json)
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(bytes(json, "utf-8"))        
+#    def do_POST(self):
+#        parsed_path = urllib.parse.urlparse(self.path)
+#        # Handle API request for database requests
+#        if parsed_path.path == '/api/database':
+#            length = self.headers["Content-length"]
+#            length = int(length)
+#            request = self.rfile.read(length)
+#            json = request_database_for_json(request.decode('UTF-8'))
+#            #print(request, json)
+#            self.send_response(200)
+#            self.send_header("Content-type", "application/json")
+#            self.send_header("Access-Control-Allow-Origin", "*")
+#            self.end_headers()
+#            self.wfile.write(bytes(json, "utf-8"))        
 
 # Set LED GPIO to output
 RPi.GPIO.setmode(RPi.GPIO.BCM)
@@ -197,8 +197,8 @@ RPi.GPIO.setup(camera_led_port, RPi.GPIO.OUT, initial=False)
 server = http.server.HTTPServer(('', 80), ApiHTTPRequestHandler)
 
 # Create and start capturing thread
-capture_thread = threading.Thread(target=capture_forever, daemon=True)
-capture_thread.start()
+#capture_thread = threading.Thread(target=capture_forever, daemon=True)
+#capture_thread.start()
 
 # Run Server until interrupt
 try:
@@ -208,4 +208,4 @@ finally:
     camera.close()
     server.server_close()
     shutdown_event.set()
-    capture_thread.join()
+#    capture_thread.join()
